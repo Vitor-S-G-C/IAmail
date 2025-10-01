@@ -3,7 +3,7 @@
 ```markdown
 # 📧 Email Classifier + AutoReply
 
-Uma aplicação simples para **classificar emails** como **Produtivo** ou **Improdutivo** e gerar **respostas automáticas**.  
+Uma aplicação simples para classificar emails como Produtivo ou Improdutivo e gerar respostas automáticas.  
 
 ---
 

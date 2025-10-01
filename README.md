@@ -1,5 +1,38 @@
-# Vue 3 + Vite
+# Email Classifier + AutoReply
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+Uma aplicação simples para classificar emails como **Produtivo** ou **Improdutivo** e gerar respostas automáticas.  
 
-Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://vuejs.org/guide/scaling-up/tooling.html#ide-support).
+---
+
+## Tecnologias
+
+- **Backend:** FastAPI, Python
+- **Frontend:** Vue 3
+- **PDF/Texto:** pypdf
+- **Optional AI:** OpenAI GPT para classificação avançada
+
+---
+
+## Funcionalidades
+
+- Classificação de texto ou arquivo (.txt/.pdf)
+- Resposta automática baseada na categoria
+- Armazenamento local dos emails em JSON
+- Filtro de emails por categoria
+- Interface minimalista em Vue 3
+
+---
+
+backend/       # Código Python + FastAPI
+frontend/      # Index.html 
+
+
+
+---
+
+## Como usar
+
+1. Instale dependências:
+```bash
+pip install fastapi uvicorn pydantic python-dotenv pypdf
+

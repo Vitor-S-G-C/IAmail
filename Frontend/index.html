@@ -20,7 +20,8 @@
 </head>
 <body>
   <div id="app">
-    <h1>Email Classifier + AutoReply</h1>
+    <h1>IAmail.com</h1>
+    <h2>Email Classifier + AutoReply</h2>
 
     <div class="card">
       <h3>Enviar email (texto)</h3>
@@ -28,11 +29,11 @@
       <div style="height:8px"></div>
       <div class="row">
         <div class="col">
-          <button @click="sendText" :disabled="loading">{{ loading ? 'Enviando...' : 'Classificar & Sugerir resposta' }}</button>
+          <button @click="sendText" :disabled="loading">{{ loading ? 'Enviando...' : 'Enviar e texto' }}</button>
         </div>
         <div style="width:12px"></div>
         <div style="width:220px">
-          <select v-model="selectedCategory">
+          <select v-model="selectedCategory" style="background-color: #0f172a;">
             <option value="">Filtrar listagem</option>
             <option value="produtivo">Produtivo</option>
             <option value="improdutivo">Improdutivo</option>
@@ -75,13 +76,21 @@
   </div>
 
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+
+
+  
+
+
   <script>
+
+    //Script Vue.js, Fiz o script aqui mesmo pois não consegui fazer o Vite funcionar, obs:arrumar o vite antes de entregar
+
     const { createApp } = Vue;
 
     createApp({
       data() {
         return {
-          apiBase: "http://127.0.0.1:8000", // <-- Ajustei aqui para a porta do backend
+          apiBase: "http://127.0.0.1:8000", // porta de entrada do backend
           textContent: "",
           file: null,
           loading: false,

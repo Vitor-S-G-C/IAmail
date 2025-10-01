@@ -1,4 +1,3 @@
-# backend/main.py
 import os
 import re
 import json
@@ -12,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
-# Import OpenAI client if disponível (opcional)
+
 try:
     from openai import OpenAI
 except Exception:
@@ -20,7 +19,7 @@ except Exception:
 
 import pypdf
 
-# --- Config ---
+# --- Configurações ---
 load_dotenv()
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
@@ -37,7 +36,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Inicializar cliente OpenAI se possível
 openai_client = None
 if OpenAI and OPENAI_API_KEY:
     try:
@@ -45,12 +43,12 @@ if OpenAI and OPENAI_API_KEY:
     except Exception:
         openai_client = None
 
-# --- Models ---
+# --- Modelos ---
 class ClassifyResponse(BaseModel):
     categoria: str
     resposta_sugerida: str
 
-# --- Util: pré-processamento simples (sem dependências pesadas) ---
+
 STOP_WORDS = {
     "a", "o", "e", "é", "de", "do", "da", "em", "um", "uma", "para", "com",
     "por", "que", "se", "os", "as", "no", "na", "ao", "à", "às", "dos", "das",
@@ -66,7 +64,6 @@ def preprocess_text(text: str) -> str:
     tokens = [t for t in re.split(r"\s+", text) if t and t not in STOP_WORDS]
     return " ".join(tokens)
 
-# --- Fallback simple classifier (keyword-based) ---
 KEYWORDS_PRODUTIVO = [
     "solicit", "ajuda", "erro", "problema", "requis", "ticket", "urgente",
     "pedido", "venda", "contrato", "fatura", "pagamento", "backup", "status",
@@ -80,7 +77,7 @@ def local_classify(text: str) -> str:
     for kw in KEYWORDS_PRODUTIVO:
         if kw in sample:
             score += 1
-    # heurística simples: 1+ keywords -> produtivo
+    
     return "Produtivo" if score >= 1 else "Improdutivo"
 
 def local_generate_reply(text: str, category: str) -> str:
@@ -93,7 +90,7 @@ def local_generate_reply(text: str, category: str) -> str:
     else:
         return "Obrigado pela mensagem! Agradecemos seu contato — vamos registrar aqui."
 
-# --- Integração com OpenAI (se disponível) ---
+
 def openai_classify_and_reply(text: str) -> ClassifyResponse:
     # Usa o cliente OpenAI (API moderna fazendo chat completions via client.chat.completions.create)
     if not openai_client:
@@ -116,7 +113,7 @@ EMAIL:
 {text}
 ---
 """
-    # Chamada adaptada ao cliente OpenAI usado no exemplo do usuário
+   
     try:
         resp = openai_client.chat.completions.create(
             model="gpt-4o-mini" if hasattr(openai_client, "chat") else "gpt-3.5-turbo",
@@ -134,23 +131,23 @@ EMAIL:
     except Exception as e:
         raise RuntimeError(f"Falha ao chamar OpenAI: {str(e)}") from e
 
-# --- Função central (tenta OpenAI, senão fallback local) ---
+
 def classify_and_reply(text: str) -> ClassifyResponse:
     if not text or len(text.strip()) < 3:
         raise ValueError("Texto muito curto para classificação.")
-    # Tenta usar OpenAI se tiver cliente configurado
+   
     if openai_client:
         try:
             return openai_classify_and_reply(text)
         except Exception:
-            # falhou — cai para local
+            
             pass
-    # fallback local
+    
     categoria = local_classify(text)
     resposta = local_generate_reply(text, categoria)
     return ClassifyResponse(categoria=categoria, resposta_sugerida=resposta)
 
-# --- Salvar email classificado em arquivo JSON ---
+
 def salvar_email(texto: str, categoria: str, metadata: Optional[dict] = None) -> str:
     catdir = os.path.join(EMAILS_DIR, categoria.lower())
     os.makedirs(catdir, exist_ok=True)
@@ -167,7 +164,7 @@ def salvar_email(texto: str, categoria: str, metadata: Optional[dict] = None) ->
         json.dump(payload, f, ensure_ascii=False, indent=2)
     return filepath
 
-# --- Rotas API ---
+
 @app.post("/api/classify_text", response_model=ClassifyResponse)
 async def api_classify_text(email_content: str = Form(...)):
     try:
@@ -187,7 +184,7 @@ async def api_classify_file(file: UploadFile = File(...)):
         text = ""
         if file.content_type == "text/plain":
             text = raw.decode("utf-8", errors="ignore")
-        else:  # pdf
+        else:  
             reader = pypdf.PdfReader(BytesIO(raw))
             pages = []
             for p in reader.pages:

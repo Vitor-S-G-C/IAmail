@@ -1,8 +1,4 @@
-Top! Bora completar o **README** do teu projeto **Email Classifier + AutoReply** já pensando no que você montou (FastAPI no backend + Vue no frontend).
 
-Aqui vai uma versão **completa e organizada**:
-
----
 
 ```markdown
 # 📧 Email Classifier + AutoReply

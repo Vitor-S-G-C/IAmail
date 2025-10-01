@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Email Classifier — Vue</title>
+  <style>
+    body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:#0f172a; color:#e6eef8; padding:24px; }
+    .card { background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02)); padding:18px; border-radius:12px; margin-bottom:12px; box-shadow: 0 6px 18px rgba(2,6,23,0.6); }
+    input, textarea, button, select { font:inherit; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.06); background:transparent; color:inherit; width:100%; box-sizing:border-box; }
+    .row { display:flex; gap:12px; }
+    .col { flex:1; }
+    .small { font-size:0.9rem; color:#9fb0cd; }
+    .tag { display:inline-block; padding:6px 10px; border-radius:999px; background:#081124; color:#9fe3a8; font-weight:600; }
+    .improd { color:#ffd6a5; }
+    .prod { color:#c7f9db; }
+    .email-item { border-left:4px solid rgba(255,255,255,0.04); padding:12px; margin-bottom:8px; border-radius:8px; background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005)); }
+    .muted { color:#98a6bf; font-size:0.9rem; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <h1>Email Classifier + AutoReply</h1>
+
+    <div class="card">
+      <h3>Enviar email (texto)</h3>
+      <textarea v-model="textContent" rows="6" placeholder="Cole aqui o conteúdo do email..."></textarea>
+      <div style="height:8px"></div>
+      <div class="row">
+        <div class="col">
+          <button @click="sendText" :disabled="loading">{{ loading ? 'Enviando...' : 'Classificar & Sugerir resposta' }}</button>
+        </div>
+        <div style="width:12px"></div>
+        <div style="width:220px">
+          <select v-model="selectedCategory">
+            <option value="">Filtrar listagem</option>
+            <option value="produtivo">Produtivo</option>
+            <option value="improdutivo">Improdutivo</option>
+          </select>
+        </div>
+      </div>
+      <div v-if="lastResult" style="margin-top:12px;">
+        <div class="muted">Categoria:</div>
+        <div :class="['tag', lastResult.categoria === 'Produtivo' ? 'prod' : 'improd']">{{ lastResult.categoria }}</div>
+        <div class="muted" style="margin-top:8px;">Resposta sugerida:</div>
+        <div style="margin-top:6px; white-space:pre-wrap;">{{ lastResult.resposta_sugerida }}</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Enviar arquivo (.txt ou .pdf)</h3>
+      <input type="file" @change="onFileChange" />
+      <div style="height:8px"></div>
+      <button @click="sendFile" :disabled="!file || loading">{{ loading ? 'Enviando...' : 'Enviar arquivo' }}</button>
+    </div>
+
+    <div class="card">
+      <h3>Emails salvos</h3>
+      <div class="small">Filtrando: <strong>{{ selectedCategory || 'todos' }}</strong></div>
+      <div style="height:12px"></div>
+      <div v-if="emails.length === 0" class="muted">Nenhum email salvo ainda.</div>
+      <div v-for="(e, idx) in emails" :key="idx" class="email-item">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <strong>{{ e.categoria }}</strong>
+            <div class="small">{{ e.criado_em }}</div>
+          </div>
+        </div>
+        <div style="height:8px"></div>
+        <div style="white-space:pre-wrap; font-size:0.95rem">{{ e.texto.length > 800 ? (e.texto.slice(0,800)+'...') : e.texto }}</div>
+      </div>
+      <div style="height:12px"></div>
+      <button @click="loadEmails">Recarregar listagem</button>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      data() {
+        return {
+          apiBase: "http://127.0.0.1:8000", // <-- Ajustei aqui para a porta do backend
+          textContent: "",
+          file: null,
+          loading: false,
+          lastResult: null,
+          emails: [],
+          selectedCategory: ""
+        }
+      },
+      methods: {
+        async sendText() {
+          if (!this.textContent || this.textContent.trim().length < 5) {
+            alert("Cole o conteúdo do email ou envie um arquivo.");
+            return;
+          }
+          this.loading = true;
+          try {
+            const fd = new FormData();
+            fd.append("email_content", this.textContent);
+            const res = await fetch(this.apiBase + "/api/classify_text", { method: "POST", body: fd });
+
+            const text = await res.text();
+            let data = {};
+            try { data = text ? JSON.parse(text) : {}; } 
+            catch(e) { throw new Error("Resposta do servidor não é JSON válido: " + text); }
+
+            if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
+            this.lastResult = data;
+            this.loadEmails();
+          } catch(err) {
+            alert("Erro: " + err.message);
+          } finally { this.loading = false; }
+        },
+        onFileChange(e) { this.file = e.target.files[0]; },
+        async sendFile() {
+          if (!this.file) { alert("Escolha um arquivo .txt ou .pdf"); return; }
+          this.loading = true;
+          try {
+            const fd = new FormData();
+            fd.append("file", this.file);
+            const res = await fetch(this.apiBase + "/api/classify_file", { method: "POST", body: fd });
+
+            const text = await res.text();
+            let data = {};
+            try { data = text ? JSON.parse(text) : {}; }
+            catch(e) { throw new Error("Resposta do servidor não é JSON válido: " + text); }
+
+            if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
+            this.lastResult = data;
+            this.loadEmails();
+          } catch(err) {
+            alert("Erro: " + err.message);
+          } finally { this.loading = false; }
+        },
+        async loadEmails() {
+          let url = this.apiBase + "/api/list_emails";
+          if (this.selectedCategory) url += "?categoria=" + encodeURIComponent(this.selectedCategory);
+          try {
+            const res = await fetch(url);
+            const text = await res.text();
+            let data = {};
+            try { data = text ? JSON.parse(text) : {}; }
+            catch(e) { throw new Error("Resposta do servidor não é JSON válido: " + text); }
+
+            if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
+            this.emails = data.emails || [];
+          } catch(err) {
+            console.error(err);
+          }
+        }
+      },
+      watch: {
+        selectedCategory() { this.loadEmails(); }
+      },
+      mounted() { this.loadEmails(); }
+    }).mount('#app');
+  </script>
+</body>
+</html>
